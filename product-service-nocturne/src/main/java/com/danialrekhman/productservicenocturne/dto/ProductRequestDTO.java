@@ -14,4 +14,5 @@ public class ProductRequestDTO {
     private BigDecimal price;
     private Boolean available;
     private Long categoryId;
+    private Integer quantity;
 }

@@ -25,11 +25,24 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product createProduct(Product product, Authentication authentication) {
-        if(!isAdmin(authentication))
+        if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can create product.");
+        if (product.getName() == null || product.getName().isBlank()) {
+            throw new IllegalArgumentException("Product name cannot be null or blank.");
+        }
+        if (productRepository.existsByName(product.getName())) {
+            throw new DuplicateResourceException("Product with name '" + product.getName() + "' already exists.");
+        }
+        if (product.getDescription() == null || product.getDescription().isBlank()) {
+            throw new IllegalArgumentException("Description cannot be null or blank.");
+        }
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price must be non-null and greater than or equal to zero.");
+        }
         if (product.getCategory() != null && product.getCategory().getId() != null) {
             Category category = categoryRepository.findById(product.getCategory().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category with id " + product.getCategory().getId() + " not found for product creation."));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Category with id " + product.getCategory().getId() + " not found for product creation."));
             product.setCategory(category);
         }
         return productRepository.save(product);
@@ -37,7 +50,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product updateProduct(Long id, Product updatedProduct, Authentication authentication) {
-        if(!isAdmin(authentication))
+        if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can update product.");
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product with id " + id + " not found for update."));
@@ -64,12 +77,17 @@ public class ProductServiceImpl implements ProductService {
         if (updatedProduct.isAvailable() != existingProduct.isAvailable()) {
             existingProduct.setAvailable(updatedProduct.isAvailable());
         }
+        if (updatedProduct.getQuantity() != existingProduct.getQuantity()) {
+            if (updatedProduct.getQuantity() < 0)
+                throw new IllegalArgumentException("Quantity must be non-negative.");
+            existingProduct.setQuantity(updatedProduct.getQuantity());
+        }
         return productRepository.save(existingProduct);
     }
 
     @Override
     public void deleteProduct(Long id, Authentication authentication) {
-        if(!isAdmin(authentication))
+        if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can delete product.");
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product with id " + id + " not found for deletion."));
@@ -102,6 +120,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public boolean isAvailableById(Long id) {
         return productRepository.existsByIdAndAvailableTrue(id);
+    }
+
+    @Override
+    public boolean reserveStock(Long productId, int amount) {
+        return productRepository.decreaseStock(productId, amount) > 0;
+    }
+
+    @Override
+    public void releaseStock(Long productId, int amount) {
+        productRepository.increaseStock(productId, amount);
     }
 
     private boolean isAdmin(Authentication authentication) {

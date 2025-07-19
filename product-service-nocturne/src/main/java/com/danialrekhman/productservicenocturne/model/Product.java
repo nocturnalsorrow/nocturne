@@ -35,6 +35,9 @@ public class Product {
     @Column(nullable = false)
     private boolean available = true;
 
+    @Column(nullable = false)
+    private int quantity;
+
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;

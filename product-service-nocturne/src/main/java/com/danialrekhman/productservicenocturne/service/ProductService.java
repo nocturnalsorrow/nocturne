@@ -19,7 +19,11 @@ public interface ProductService {
 
         List<Product> getProductsByCategory(Long categoryId);
 
-        List<Product> searchProducts(String keyword); // поиск по имени/описанию
+        List<Product> searchProducts(String keyword);
 
         boolean isAvailableById(Long id);
+
+        boolean reserveStock(Long productId, int amount);
+
+        void releaseStock(Long productId, int amount);
 }

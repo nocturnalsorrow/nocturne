@@ -14,7 +14,11 @@ import java.util.List;
 @Transactional
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    List<Order> findAllByOrderByOrderDateDesc();
+
     List<Order> findAllByUserEmail(String userEmail);
+
+    List<Order> findAllByUserEmailOrderByOrderDateDesc(String userEmail);
 
     @Query("select o.userEmail from Order o where o.id = :orderId")
     String findUserEmailById(Long orderId);

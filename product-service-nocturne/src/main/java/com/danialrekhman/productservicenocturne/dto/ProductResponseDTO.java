@@ -14,8 +14,9 @@ public class ProductResponseDTO {
     private String name;
     private String description;
     private BigDecimal price;
-    private Long categoryId;
-    private String categoryName; // Дополнительно можно выводить имя категории
     private Boolean available;
+    private Long categoryId;
+    private String categoryName;
+    private Integer quantity;
     private List<ProductImageDTO> images;
 }

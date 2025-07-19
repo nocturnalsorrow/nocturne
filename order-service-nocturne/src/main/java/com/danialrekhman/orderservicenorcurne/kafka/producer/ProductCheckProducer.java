@@ -32,5 +32,17 @@ public class ProductCheckProducer {
         template.send("product-check", msg);
         return fut.orTimeout(3, TimeUnit.SECONDS);
     }
+
+    public void release(Long productId, int qty) {
+        ProductCheckMessage msg = ProductCheckMessage.builder()
+                .correlationId(UUID.randomUUID().toString())
+                .productId(productId)
+                .quantity(qty)
+                .available(true)
+                .message("Release stock")
+                .build();
+
+        template.send("stock-release", msg);
+    }
 }
 

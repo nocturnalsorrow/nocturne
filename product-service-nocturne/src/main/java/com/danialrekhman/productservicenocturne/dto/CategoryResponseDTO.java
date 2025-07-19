@@ -11,6 +11,6 @@ import java.util.List;
 public class CategoryResponseDTO {
     private Long id;
     private String name;
-    private Long parentId; // чтобы не возвращать весь объект parent, а только id
-    private List<CategoryResponseDTO> subcategories; // вложенные подкатегории (можно пустой список)
+    private Long parentId;
+    private List<CategoryResponseDTO> subcategories;
 }

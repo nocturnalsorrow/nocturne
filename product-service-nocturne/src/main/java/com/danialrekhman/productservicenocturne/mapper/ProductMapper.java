@@ -20,9 +20,10 @@ public class ProductMapper {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .available(product.isAvailable())
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
-                .available(product.isAvailable())
+                .quantity(product.getQuantity())
                 .images(product.getImages() != null
                         ? product.getImages().stream()
                         .map(productImageMapper::toDto)
@@ -36,8 +37,9 @@ public class ProductMapper {
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
-        if (dto.getAvailable() != null)
-            product.setAvailable(dto.getAvailable());
+        product.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : false);
+        product.setQuantity(dto.getQuantity() != null ? dto.getQuantity() : 0);
+
         if (dto.getCategoryId() != null) {
             Category category = new Category();
             category.setId(dto.getCategoryId());

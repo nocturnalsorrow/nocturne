@@ -33,9 +33,7 @@ import java.util.concurrent.TimeUnit;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderMapper orderMapper;
     private final ProductCheckProducer productCheckProducer;
-    private final ProductCheckResponseListener responseListener;
 
 //    @Override
 //    public Order createOrder(OrderRequestDTO requestDTO, Authentication authentication) {
@@ -50,41 +48,42 @@ public class OrderServiceImpl implements OrderService {
     public Order createOrder(OrderRequestDTO requestDTO, Authentication authentication) {
         if (authentication == null || authentication.getName() == null)
             throw new CustomAccessDeniedException("You don't have access to create an order.");
-        // 1. Отправляем запросы проверки товаров параллельно и собираем futures
+
         List<CompletableFuture<ProductCheckMessage>> futures = new ArrayList<>();
         for (OrderItemRequestDTO item : requestDTO.getItems()) {
-            CompletableFuture<ProductCheckMessage> future = productCheckProducer.check(
-                    item.getProductId(), item.getQuantity()
-            );
-            futures.add(future);
+            futures.add(productCheckProducer.check(item.getProductId(), item.getQuantity()));
         }
-        // 2. Ждём все ответы и собираем их в карту для удобного доступа по productId
+
         Map<Long, ProductCheckMessage> responsesMap = new HashMap<>();
-        for (CompletableFuture<ProductCheckMessage> future : futures) {
-            try {
+        List<ProductCheckMessage> reservedProducts = new ArrayList<>();
+
+        try {
+            for (CompletableFuture<ProductCheckMessage> future : futures) {
                 ProductCheckMessage response = future.get(3, TimeUnit.SECONDS);
 
                 if (!Boolean.TRUE.equals(response.getAvailable())) {
+                    releaseReservedStock(reservedProducts);
                     throw new RuntimeException("Product with ID " + response.getProductId() + " is not available.");
                 }
-                responsesMap.put(response.getProductId(), response);
 
-            } catch (InterruptedException | ExecutionException | TimeoutException |
-                     java.util.concurrent.TimeoutException e) {
-                throw new RuntimeException("Failed to check product availability", e);
+                responsesMap.put(response.getProductId(), response);
+                reservedProducts.add(response);
             }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            releaseReservedStock(reservedProducts);
+            throw new RuntimeException("Failed to check product availability", e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new RuntimeException(e);
         }
-        // 3. Создаём сущность заказа и проставляем userEmail
+
         Order order = new Order();
         order.setUserEmail(authentication.getName());
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.NEW);
-        // 4. Создаём элементы заказа с актуальными ценами из ответа
+
         List<OrderItem> items = new ArrayList<>();
         for (OrderItemRequestDTO itemDTO : requestDTO.getItems()) {
             ProductCheckMessage productResponse = responsesMap.get(itemDTO.getProductId());
-            if (productResponse == null)
-                throw new RuntimeException("No response for product ID " + itemDTO.getProductId());
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(itemDTO.getProductId());
             orderItem.setQuantity(itemDTO.getQuantity());
@@ -93,10 +92,9 @@ public class OrderServiceImpl implements OrderService {
             items.add(orderItem);
         }
         order.setItems(items);
-        // 5. Сохраняем заказ с элементами
+
         return orderRepository.save(order);
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -113,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getOrdersByUserEmail(String email, Authentication authentication) {
         if (!isAdmin(authentication) && !authentication.getName().equals(email))
             throw new CustomAccessDeniedException("You don't have access to this order.");
-        return orderRepository.findAllByUserEmail(email);
+        return orderRepository.findAllByUserEmailOrderByOrderDateDesc(email);
     }
 
     @Override
@@ -133,8 +131,13 @@ public class OrderServiceImpl implements OrderService {
         if (!isAdmin(authentication) && !order.getUserEmail().equals(authentication.getName()))
             throw new CustomAccessDeniedException("Only admin or order owner can cancel order.");
         if (order.getStatus() == OrderStatus.DELIVERED)
-            throw new OrderCancellationException("You can't cancel delivered order. " +
-                    "Try to contact with customer service if you need to cancel it.");
+            throw new OrderCancellationException("Delivered orders can't be cancelled.");
+
+        // Возврат зарезервированного стока
+        for (OrderItem item : order.getItems()) {
+            productCheckProducer.release(item.getProductId(), item.getQuantity());
+        }
+
         order.setStatus(OrderStatus.CANCELLED);
         return orderRepository.save(order);
     }
@@ -153,7 +156,7 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getAllOrders(Authentication authentication) {
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can get all orders.");
-        return orderRepository.findAll();
+        return orderRepository.findAllByOrderByOrderDateDesc();
     }
 
     @Override
@@ -170,6 +173,12 @@ public class OrderServiceImpl implements OrderService {
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can get user email by order id.");
         return orderRepository.findUserEmailById(orderId);
+    }
+
+    private void releaseReservedStock(List<ProductCheckMessage> reservedProducts) {
+        for (ProductCheckMessage product : reservedProducts) {
+            productCheckProducer.release(product.getProductId(), product.getQuantity());
+        }
     }
 
     private boolean isAdmin(Authentication authentication) {
