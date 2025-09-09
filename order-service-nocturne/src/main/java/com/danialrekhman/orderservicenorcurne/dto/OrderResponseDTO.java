@@ -2,6 +2,7 @@ package com.danialrekhman.orderservicenorcurne.dto;
 
 import com.danialrekhman.orderservicenorcurne.model.OrderStatus;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +12,7 @@ import java.util.List;
 @Setter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderResponseDTO {
     Long id;
     String userEmail;

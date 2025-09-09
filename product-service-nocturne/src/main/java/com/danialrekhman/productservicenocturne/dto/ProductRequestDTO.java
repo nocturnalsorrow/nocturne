@@ -1,6 +1,7 @@
 package com.danialrekhman.productservicenocturne.dto;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
@@ -8,11 +9,12 @@ import java.math.BigDecimal;
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductRequestDTO {
-    private String name;
-    private String description;
-    private BigDecimal price;
-    private Boolean available;
-    private Long categoryId;
-    private Integer quantity;
+    String name;
+    String description;
+    BigDecimal price;
+    Boolean available;
+    Long categoryId;
+    Integer quantity;
 }

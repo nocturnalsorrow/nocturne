@@ -1,13 +1,14 @@
 package com.danialrekhman.orderservicenorcurne.service;
 
+import com.danialrekhman.commonevents.OrderCreatedEvent;
+import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.commonevents.ProductCheckMessage;
 import com.danialrekhman.orderservicenorcurne.dto.OrderItemRequestDTO;
 import com.danialrekhman.orderservicenorcurne.exception.CustomAccessDeniedException;
 import com.danialrekhman.orderservicenorcurne.exception.OrderCancellationException;
 import com.danialrekhman.orderservicenorcurne.exception.OrderNotFoundException;
-import com.danialrekhman.orderservicenorcurne.kafka.listener.ProductCheckResponseListener;
+import com.danialrekhman.orderservicenorcurne.kafka.producer.OrderEventProducer;
 import com.danialrekhman.orderservicenorcurne.kafka.producer.ProductCheckProducer;
-import com.danialrekhman.orderservicenorcurne.mapper.OrderMapper;
 import com.danialrekhman.orderservicenorcurne.dto.OrderRequestDTO;
 import com.danialrekhman.orderservicenorcurne.dto.OrderUpdateStatusDTO;
 import com.danialrekhman.orderservicenorcurne.model.Order;
@@ -21,6 +22,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductCheckProducer productCheckProducer;
+    private final OrderEventProducer orderEventProducer;
 
 //    @Override
 //    public Order createOrder(OrderRequestDTO requestDTO, Authentication authentication) {
@@ -93,7 +96,20 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setItems(items);
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        // публикуем событие
+        OrderCreatedEvent event = OrderCreatedEvent.builder()
+                .orderId(saved.getId())
+                .userEmail(saved.getUserEmail())
+                .totalPrice(saved.getItems().stream()
+                        .map(i -> i.getPriceAtOrder().multiply(BigDecimal.valueOf(i.getQuantity())))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add))
+                .build();
+
+        orderEventProducer.publishOrderCreated(event);
+
+        return saved;
     }
 
     @Override
@@ -122,6 +138,20 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found for status update."));
         order.setStatus(status.getStatus());
         return orderRepository.save(order);
+    }
+
+    @Transactional
+    public void handlePaymentResult(PaymentProcessedEvent event) {
+        Order order = orderRepository.findById(event.getOrderId())
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+
+        if ("SUCCESS".equals(event.getStatus())) {
+            order.setStatus(OrderStatus.PAID);
+        } else {
+            order.setStatus(OrderStatus.FAILED);
+        }
+
+        orderRepository.save(order);
     }
 
     @Override

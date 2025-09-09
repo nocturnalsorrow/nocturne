@@ -1,6 +1,7 @@
 package com.danialrekhman.productservicenocturne.dto;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -8,9 +9,10 @@ import java.util.List;
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryResponseDTO {
-    private Long id;
-    private String name;
-    private Long parentId;
-    private List<CategoryResponseDTO> subcategories;
+    Long id;
+    String name;
+    Long parentId;
+    List<CategoryResponseDTO> subcategories;
 }

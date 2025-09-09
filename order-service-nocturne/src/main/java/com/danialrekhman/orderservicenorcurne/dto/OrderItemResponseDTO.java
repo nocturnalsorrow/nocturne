@@ -1,6 +1,7 @@
 package com.danialrekhman.orderservicenorcurne.dto;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
@@ -8,6 +9,7 @@ import java.math.BigDecimal;
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderItemResponseDTO {
     Long id;
     Long productId;

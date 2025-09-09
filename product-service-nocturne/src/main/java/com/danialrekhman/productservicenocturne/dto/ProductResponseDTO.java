@@ -1,6 +1,7 @@
 package com.danialrekhman.productservicenocturne.dto;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,14 +10,15 @@ import java.util.List;
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductResponseDTO {
-    private Long id;
-    private String name;
-    private String description;
-    private BigDecimal price;
-    private Boolean available;
-    private Long categoryId;
-    private String categoryName;
-    private Integer quantity;
-    private List<ProductImageDTO> images;
+    Long id;
+    String name;
+    String description;
+    BigDecimal price;
+    Boolean available;
+    Long categoryId;
+    String categoryName;
+    Integer quantity;
+    List<ProductImageDTO> images;
 }

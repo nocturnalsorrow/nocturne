@@ -2,14 +2,16 @@ package com.danialrekhman.userservice.dto;
 
 import com.danialrekhman.userservice.model.Role;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponseDTO {
-    private String email;
-    private String username;
-    private Role role;
-    private byte[] profileImage;
+    String email;
+    String username;
+    Role role;
+    byte[] profileImage;
 }

@@ -1,12 +1,14 @@
 package com.danialrekhman.userservice.dto;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuthRequestDTO {
-    private String email;
-    private String password;
+    String email;
+    String password;
 }
