@@ -4,12 +4,12 @@ import com.danialrekhman.userservice.dto.*;
 import com.danialrekhman.userservice.mapper.UserMapper;
 import com.danialrekhman.userservice.model.User;
 import com.danialrekhman.userservice.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ public class UserController {
     private final UserMapper userMapper;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserResponseDTO> signup(@RequestBody UserSignUpRequestDTO requestDTO) {
+    public ResponseEntity<UserResponseDTO> signup(@Valid @RequestBody UserSignUpRequestDTO requestDTO) {
         User userToCreate = userMapper.toUser(requestDTO);
         User createdUser = userService.signUpUser(userToCreate);
         return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toUserResponseDTO(createdUser));

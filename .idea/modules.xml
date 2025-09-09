@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/nocturne.iml" filepath="$PROJECT_DIR$/nocturne.iml" />
-      <module fileurl="file://$PROJECT_DIR$/user-service-nocturne/user-service-nocturne.iml" filepath="$PROJECT_DIR$/user-service-nocturne/user-service-nocturne.iml" />
     </modules>
   </component>
 </project>

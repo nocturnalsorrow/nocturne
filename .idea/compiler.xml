@@ -9,15 +9,16 @@
         <outputRelativeToContentRoot value="true" />
         <module name="common-events" />
       </profile>
-      <profile name="Annotation profile for product-service-nocturne" enabled="true">
+      <profile name="Annotation profile for user-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
-        <module name="user-service-nocturne" />
         <module name="product-service-nocturne" />
+        <module name="user-service-nocturne" />
+        <module name="payment-service-nocturne" />
         <module name="order-service-nocturne" />
       </profile>
     </annotationProcessing>
@@ -26,6 +27,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="common-events" options="-parameters" />
       <module name="order-service-nocturne" options="-parameters" />
+      <module name="payment-service-nocturne" options="-parameters" />
       <module name="product-service-nocturne" options="-parameters" />
       <module name="user-service-nocturne" options="-parameters" />
     </option>

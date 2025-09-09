@@ -14,3 +14,64 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+
+#version: '3.8'
+#services:
+#  kafka-1:
+#    image: bitnami/kafka:3.9.0
+#    container_name: kafka-1
+#    ports:
+#      - "9092:9092"
+#      - "9093:9093"
+#    environment:
+#      - KAFKA_ENABLE_KRAFT=yes
+#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+#      - KAFKA_CFG_NODE_ID=1
+#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
+#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,CONTROLLER://kafka-1:9093
+#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#    volumes:
+#      - ./data/kafka-1:/bitnami/kafka
+#
+#  kafka-2:
+#    image: bitnami/kafka:3.9.0
+#    container_name: kafka-2
+#    ports:
+#      - "9094:9094"
+#      - "9095:9095"
+#    environment:
+#      - KAFKA_ENABLE_KRAFT=yes
+#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+#      - KAFKA_CFG_NODE_ID=2
+#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
+#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094,CONTROLLER://:9095
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9094,CONTROLLER://kafka-2:9095
+#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#    volumes:
+#      - ./data/kafka-2:/bitnami/kafka
+#
+#  kafka-3:
+#    image: bitnami/kafka:3.9.0
+#    container_name: kafka-3
+#    ports:
+#      - "9096:9096"
+#      - "9097:9097"
+#    environment:
+#      - KAFKA_ENABLE_KRAFT=yes
+#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+#      - KAFKA_CFG_NODE_ID=3
+#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
+#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9096,CONTROLLER://:9097
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9096,CONTROLLER://kafka-3:9097
+#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#    volumes:
+#      - ./data/kafka-3:/bitnami/kafka
+
