@@ -1,5 +1,6 @@
 package com.danialrekhman.orderservicenorcurne.kafka.listener;
 
+import com.danialrekhman.commonevents.PaymentFailedEvent;
 import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.orderservicenorcurne.service.OrderService;
 import com.danialrekhman.orderservicenorcurne.service.OrderServiceImpl;
@@ -22,4 +23,14 @@ public class PaymentProcessedListener {
     public void onPaymentProcessed(PaymentProcessedEvent event) {
         orderService.handlePaymentResult(event);
     }
+
+    @KafkaListener(
+            topics = "payment-failed",
+            groupId = "order-service-group",
+            containerFactory = "paymentFailedKafkaListenerContainerFactory"
+    )
+    public void onPaymentFailed(PaymentFailedEvent event) {
+        orderService.handlePaymentFailed(event);
+    }
 }
+

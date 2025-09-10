@@ -1,6 +1,7 @@
 package com.danialrekhman.orderservicenorcurne.service;
 
 import com.danialrekhman.commonevents.OrderCreatedEvent;
+import com.danialrekhman.commonevents.PaymentFailedEvent;
 import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.commonevents.ProductCheckMessage;
 import com.danialrekhman.orderservicenorcurne.dto.OrderItemRequestDTO;
@@ -16,6 +17,7 @@ import com.danialrekhman.orderservicenorcurne.model.OrderItem;
 import com.danialrekhman.orderservicenorcurne.model.OrderStatus;
 import com.danialrekhman.orderservicenorcurne.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -142,15 +145,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional
     public void handlePaymentResult(PaymentProcessedEvent event) {
+        log.info("Handling successful payment for orderId={}", event.getOrderId());
+        // Находим заказ
         Order order = orderRepository.findById(event.getOrderId())
-                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException(event.getOrderId() + " order not found."));
 
-        if ("SUCCESS".equals(event.getStatus())) {
-            order.setStatus(OrderStatus.PAID);
-        } else {
-            order.setStatus(OrderStatus.FAILED);
-        }
+        // Обновляем статус
+        order.setStatus(OrderStatus.PAID);
+        orderRepository.save(order);
+    }
 
+    @Transactional
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+        log.info("Handling failed payment for orderId={}", event.getOrderId());
+        Order order = orderRepository.findById(event.getOrderId())
+                .orElseThrow(() -> new OrderNotFoundException(event.getOrderId() + " order not found."));
+        order.setStatus(OrderStatus.WAITING_FOR_PAYMENT);
         orderRepository.save(order);
     }
 

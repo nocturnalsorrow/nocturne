@@ -1,8 +1,10 @@
 package com.danialrekhman.paymentservicenocturne.service;
 
 import com.danialrekhman.commonevents.OrderCreatedEvent;
+import com.danialrekhman.commonevents.PaymentFailedEvent;
 import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.paymentservicenocturne.dto.PaymentResponseDTO;
+import com.danialrekhman.paymentservicenocturne.exception.CustomAccessDeniedException;
 import com.danialrekhman.paymentservicenocturne.exception.InvalidPaymentDataException;
 import com.danialrekhman.paymentservicenocturne.exception.PaymentNotFoundException;
 import com.danialrekhman.paymentservicenocturne.exception.PaymentProcessingException;
@@ -12,7 +14,6 @@ import com.danialrekhman.paymentservicenocturne.model.Payment;
 import com.danialrekhman.paymentservicenocturne.model.PaymentMethod;
 import com.danialrekhman.paymentservicenocturne.model.PaymentStatus;
 import com.danialrekhman.paymentservicenocturne.repository.PaymentRepository;
-import com.danialrekhman.paymentservicenocturne.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -37,8 +38,28 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void createAndProcessPayment(OrderCreatedEvent event) {
-        // тут Authentication не нужен, т.к. платеж создается асинхронно по событию из OrderService
         try {
+            // Проверяем, нет ли уже платежа по этому orderId
+            List<Payment> existingPayments = paymentRepository.findByOrderId(event.getOrderId());
+            if (!existingPayments.isEmpty()) {
+                Payment existingPayment = existingPayments.getFirst();
+                log.warn("Duplicate payment request ignored for orderId={}", event.getOrderId());
+
+                // Отправляем подтверждение заново (идемпотентность)
+                PaymentProcessedEvent response = PaymentProcessedEvent.builder()
+                        .orderId(existingPayment.getOrderId())
+                        .paymentId(existingPayment.getId())
+                        .transactionId(existingPayment.getTransactionId())
+                        .amount(existingPayment.getAmount())
+                        .status(existingPayment.getStatus().name())
+                        .method(existingPayment.getMethod().name())
+                        .build();
+
+                eventProducer.publishPaymentProcessed(response);
+                return;
+            }
+
+            // Создаём новый платёж
             Payment payment = Payment.builder()
                     .transactionId(UUID.randomUUID().toString())
                     .orderId(event.getOrderId())
@@ -51,27 +72,37 @@ public class PaymentServiceImpl implements PaymentService {
 
             payment = paymentRepository.save(payment);
 
+            // "Обрабатываем" (эмуляция)
             PaymentStatus result = processPaymentMock(payment);
             payment.setStatus(result);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            PaymentProcessedEvent response = PaymentProcessedEvent.builder()
-                    .orderId(payment.getOrderId())
-                    .paymentId(payment.getId())
-                    .transactionId(payment.getTransactionId())
-                    .amount(payment.getAmount())
-                    .status(payment.getStatus().name())
-                    .method(payment.getMethod().name())
-                    .build();
-
-            eventProducer.publishPaymentProcessed(response);
+            if (result == PaymentStatus.SUCCESS) {
+                PaymentProcessedEvent response = PaymentProcessedEvent.builder()
+                        .orderId(payment.getOrderId())
+                        .paymentId(payment.getId())
+                        .transactionId(payment.getTransactionId())
+                        .amount(payment.getAmount())
+                        .status(payment.getStatus().name())
+                        .method(payment.getMethod().name())
+                        .build();
+                eventProducer.publishPaymentProcessed(response);
+            } else {
+                PaymentFailedEvent failedEvent = PaymentFailedEvent.builder()
+                        .orderId(payment.getOrderId())
+                        .paymentId(payment.getId())
+                        .reason("Mock payment failed")
+                        .build();
+                eventProducer.publishPaymentFailed(failedEvent);
+            }
 
         } catch (Exception e) {
             log.error("Payment processing failed for orderId={}", event.getOrderId(), e);
             throw new PaymentProcessingException("Failed to process payment for orderId " + event.getOrderId());
         }
     }
+
 
     private PaymentStatus processPaymentMock(Payment payment) {
         if (payment.getMethod() == PaymentMethod.MOCK) {

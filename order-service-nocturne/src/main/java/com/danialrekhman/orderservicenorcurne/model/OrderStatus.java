@@ -2,7 +2,7 @@ package com.danialrekhman.orderservicenorcurne.model;
 
 public enum OrderStatus {
     NEW,                // New order just placed
-    AWAITING_PAYMENT,   // Waiting for payment (e.g. manual payment)
+    WAITING_FOR_PAYMENT,   // Waiting for payment (e.g. manual payment)
     PAID,               // Payment received, waiting for processing
     PROCESSING,         // Order is being prepared (e.g. picked and packed)
     SHIPPED,            // Shipped by delivery service
