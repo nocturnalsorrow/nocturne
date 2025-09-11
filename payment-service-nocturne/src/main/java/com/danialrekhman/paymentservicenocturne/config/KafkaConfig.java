@@ -21,7 +21,7 @@ import java.util.Map;
 public class KafkaConfig {
 
     @Bean
-    public ProducerFactory<String, PaymentProcessedEvent> producerFactory() {
+    public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -31,7 +31,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, PaymentProcessedEvent> kafkaTemplate(ProducerFactory<String, PaymentProcessedEvent> pf) {
+    public KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> pf) {
         return new KafkaTemplate<>(pf);
     }
 

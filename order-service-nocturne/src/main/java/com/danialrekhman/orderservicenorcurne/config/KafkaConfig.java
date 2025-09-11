@@ -1,6 +1,7 @@
 package com.danialrekhman.orderservicenorcurne.config;
 
 import com.danialrekhman.commonevents.OrderCreatedEvent;
+import com.danialrekhman.commonevents.PaymentFailedEvent;
 import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.commonevents.ProductCheckMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -22,6 +23,44 @@ import java.util.Map;
 public class KafkaConfig {
 
     // ================= PRODUCER =================
+    @Bean
+    public ProducerFactory<String, Object> producerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> pf) {
+        return new KafkaTemplate<>(pf);
+    }
+
+    @Bean
+    public ConsumerFactory<String, PaymentFailedEvent> paymentFailedConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "order-service-group");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, PaymentFailedEvent.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        return new DefaultKafkaConsumerFactory<>(props);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentFailedEvent>
+    paymentFailedKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PaymentFailedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(paymentFailedConsumerFactory());
+        return factory;
+    }
+
+
     @Bean
     public ProducerFactory<String, OrderCreatedEvent> orderProducerFactory() {
         Map<String, Object> props = new HashMap<>();
