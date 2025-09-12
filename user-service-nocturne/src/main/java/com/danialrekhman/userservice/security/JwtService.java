@@ -22,7 +22,7 @@ public class JwtService {
     public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        long expirationTimeMillis = 1000 * 60 * 60; // 1 hour
+        long expirationTimeMillis = 1000 * 60 * 60 * 24; // 24 hours
         return Jwts.builder()
                 .claims()
                 .add(claims)

@@ -20,10 +20,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtFilter(JwtService jwtService, UserDetailsServiceImpl userDetailsService) {
+    public JwtFilter(JwtService jwtService, UserDetailsServiceImpl userDetailsService, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -38,6 +40,10 @@ public class JwtFilter extends OncePerRequestFilter {
             email = jwtService.extractEmail(token);
         }
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is invalidated");
+                return;
+            }
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             if (jwtService.validateToken(token, userDetails)) {
                 String role = jwtService.extractRole(token);

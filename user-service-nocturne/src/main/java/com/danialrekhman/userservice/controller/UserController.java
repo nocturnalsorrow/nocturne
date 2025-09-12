@@ -3,7 +3,9 @@ package com.danialrekhman.userservice.controller;
 import com.danialrekhman.userservice.dto.*;
 import com.danialrekhman.userservice.mapper.UserMapper;
 import com.danialrekhman.userservice.model.User;
+import com.danialrekhman.userservice.security.TokenBlacklistService;
 import com.danialrekhman.userservice.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDTO> signup(@Valid @RequestBody UserSignUpRequestDTO requestDTO) {
@@ -35,6 +38,16 @@ public class UserController {
         userCredentials.setPassword(authRequestDTO.getPassword());
         String token = userService.verifyAndReturnToken(userCredentials);
         return ResponseEntity.ok(new AuthResponseDTO(token));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7); // вырезаем "Bearer "
+            tokenBlacklistService.blacklistToken(token);
+        }
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping
