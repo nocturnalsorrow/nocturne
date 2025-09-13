@@ -6,14 +6,15 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PaymentProcessedEvent {
-    Long orderId;
-    Long paymentId;
-    String transactionId;
-    BigDecimal amount;
-    String status; // SUCCESS / FAILED
-    String method; // MOCK / CARD / etc.
+    private Long orderId;
+    private Long paymentId;
+    private String transactionId;
+    private BigDecimal amount;
+    private String status; // SUCCESS / FAILED
+    private String method; // MOCK / CARD / etc.
+    private String userEmail;
 }

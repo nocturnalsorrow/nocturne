@@ -6,9 +6,9 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class ProductCheckMessage {
     private String correlationId;
     private Long productId;

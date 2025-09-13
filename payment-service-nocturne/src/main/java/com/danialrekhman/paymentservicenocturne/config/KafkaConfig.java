@@ -2,7 +2,6 @@ package com.danialrekhman.paymentservicenocturne.config;
 
 
 import com.danialrekhman.commonevents.OrderCreatedEvent;
-import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

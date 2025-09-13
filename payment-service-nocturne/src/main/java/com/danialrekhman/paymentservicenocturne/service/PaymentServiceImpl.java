@@ -53,6 +53,7 @@ public class PaymentServiceImpl implements PaymentService {
                         .amount(existingPayment.getAmount())
                         .status(existingPayment.getStatus().name())
                         .method(existingPayment.getMethod().name())
+                        .userEmail(existingPayment.getUserEmail())
                         .build();
 
                 eventProducer.publishPaymentProcessed(response);
@@ -86,6 +87,7 @@ public class PaymentServiceImpl implements PaymentService {
                         .amount(payment.getAmount())
                         .status(payment.getStatus().name())
                         .method(payment.getMethod().name())
+                        .userEmail(payment.getUserEmail())
                         .build();
                 eventProducer.publishPaymentProcessed(response);
             } else {
@@ -93,6 +95,7 @@ public class PaymentServiceImpl implements PaymentService {
                         .orderId(payment.getOrderId())
                         .paymentId(payment.getId())
                         .reason("Mock payment failed")
+                        .userEmail(payment.getUserEmail())
                         .build();
                 eventProducer.publishPaymentFailed(failedEvent);
             }
