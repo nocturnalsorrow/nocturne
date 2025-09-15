@@ -38,8 +38,7 @@ public class NotificationListener {
         emailService.sendEmail(
                 event.getUserEmail(),
                 "Order Created",
-                "Your order #" + event.getOrderId() + " was created. Total: " + event.getTotalPrice()
-        );
+                "Your order #" + event.getOrderId() + " was created. Total: " + event.getTotalPrice() + "$");
     }
 
     @KafkaListener(
