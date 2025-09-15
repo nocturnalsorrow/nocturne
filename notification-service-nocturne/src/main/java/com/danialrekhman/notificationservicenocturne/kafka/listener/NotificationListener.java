@@ -52,7 +52,7 @@ public class NotificationListener {
 
         String body = "Order #" + event.getOrderId() +
                 " | Payment " + event.getStatus() +
-                " | Amount: " + event.getAmount() +
+                " | Amount: " + event.getAmount() + " $" +
                 " | Method: " + event.getMethod();
 
         emailService.sendEmail(event.getUserEmail(), "Payment Result", body);

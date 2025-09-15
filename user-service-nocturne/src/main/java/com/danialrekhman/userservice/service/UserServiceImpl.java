@@ -1,7 +1,9 @@
 package com.danialrekhman.userservice.service;
 
+import com.danialrekhman.commonevents.UserRegisteredEvent;
 import com.danialrekhman.userservice.dto.UserUpdateRequestDTO;
 import com.danialrekhman.userservice.exception.*;
+import com.danialrekhman.userservice.kafka.UserEventProducer;
 import com.danialrekhman.userservice.model.Role;
 import com.danialrekhman.userservice.model.User;
 import com.danialrekhman.userservice.repository.UserRepository;
@@ -29,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserEventProducer userEventProducer;
 
     @Override
     public List<User> getAllUsers(Authentication authentication) {
@@ -52,7 +55,14 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException("User with email '" + user.getEmail() + "' already exists.");
         user.setRole(Role.ROLE_USER);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        // Publish event
+        UserRegisteredEvent event = UserRegisteredEvent.builder()
+                .email(savedUser.getEmail())
+                .username(savedUser.getUsername())
+                .build();
+        userEventProducer.publishUserRegistered(event);
+        return savedUser;
     }
 
     @Override
