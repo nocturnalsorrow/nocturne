@@ -20,12 +20,22 @@ public class NotificationListener {
             containerFactory = "userRegisteredKafkaListenerContainerFactory"
     )
     public void onUserRegistered(UserRegisteredEvent event) {
-        log.info("Received UserRegisteredEvent: {}", event.getEmail());
-        emailService.sendEmail(
-                event.getEmail(),
-                "Welcome to our shop!",
-                "Hello " + event.getUsername() + ", thanks for registering!"
-        );
+        try {
+            log.info("Received UserRegisteredEvent: {}", event.getEmail());
+            emailService.sendEmail(
+                    event.getEmail(),
+                    "Welcome to Our Music Shop!",
+                    "Hello " + event.getUsername() + ",\n\n" +
+                            "Thank you for registering with us! We're thrilled to have you join our community of music lovers. " +
+                            "Discover an incredible assortment of instruments, accessories, albums, and everything music-related. " +
+                            "Whether you're a beginner or a pro, we've got something for everyone.\n\n" +
+                            "Happy shopping, and let the music play!\n\n" +
+                            "Best regards,\n" +
+                            "Your Nocturne Music Shop Team"
+            );
+        } catch (Exception e) {
+            log.error("Error processing UserRegisteredEvent for email: {}", event.getEmail(), e);
+        }
     }
 
     @KafkaListener(
@@ -72,5 +82,20 @@ public class NotificationListener {
                 "Payment Failed",
                 "Your payment for order #" + event.getOrderId() + " failed. Reason: " + event.getReason()
         );
+    }
+
+    @KafkaListener(topics = "email-verification", groupId = "notification-service-group",
+            containerFactory = "verificationKafkaListenerContainerFactory")
+    public void onVerificationEmail(VerificationEmailEvent event) {
+        String to = event.getEmail();
+        String subject = "Please verify your email";
+        String body = "Hello " + event.getUsername() + ",\n\n"
+                + "We received a request to verify your email address.\n\n"
+                + "Copy and paste the following verification code into the browser:\n\n"
+                + event.getToken() + "\n\n"
+                + "or click the link to verify your email:\n\n"
+                + event.getVerificationUrl()
+                + "\n\nIf you didn't register, ignore this email.";
+        emailService.sendEmail(to, subject, body);
     }
 }

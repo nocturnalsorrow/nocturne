@@ -28,6 +28,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     Role role;
 
+    // NEW: email verification flag
+    @Column(nullable = false)
+    boolean verified = false;
+
     @Lob
     byte[] profileImage;
 }

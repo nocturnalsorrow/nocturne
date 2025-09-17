@@ -1,11 +1,13 @@
 package com.danialrekhman.userservice.service;
 
 import com.danialrekhman.commonevents.UserRegisteredEvent;
+import com.danialrekhman.commonevents.VerificationEmailEvent;
 import com.danialrekhman.userservice.dto.UserUpdateRequestDTO;
 import com.danialrekhman.userservice.exception.*;
 import com.danialrekhman.userservice.kafka.UserEventProducer;
 import com.danialrekhman.userservice.model.Role;
 import com.danialrekhman.userservice.model.User;
+import com.danialrekhman.userservice.model.VerificationToken;
 import com.danialrekhman.userservice.repository.UserRepository;
 import com.danialrekhman.userservice.security.JwtService;
 import com.danialrekhman.userservice.security.MyUserDetails;
@@ -18,9 +20,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -32,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserEventProducer userEventProducer;
+    private final VerificationTokenService verificationTokenService;
 
     @Override
     public List<User> getAllUsers(Authentication authentication) {
@@ -53,16 +55,52 @@ public class UserServiceImpl implements UserService {
     public User signUpUser(User user) {
         if (userRepository.existsByEmail(user.getEmail()))
             throw new DuplicateResourceException("User with email '" + user.getEmail() + "' already exists.");
+
         user.setRole(Role.ROLE_USER);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setVerified(false);
         User savedUser = userRepository.save(user);
-        // Publish event
-        UserRegisteredEvent event = UserRegisteredEvent.builder()
+
+        // Створюємо verification token
+        VerificationToken vt = verificationTokenService.createTokenForUser(savedUser);
+
+        // Відправляємо верифікаційний лист
+        VerificationEmailEvent verificationEvent = VerificationEmailEvent.builder()
                 .email(savedUser.getEmail())
                 .username(savedUser.getUsername())
+                .token(vt.getToken())
+                .verificationUrl("http://localhost:3000/verify?token=" + vt.getToken())
+                .build();
+        userEventProducer.publishVerificationEmail(verificationEvent);
+
+        return savedUser;
+    }
+
+
+    @Override
+    public boolean verifyUser(String token) {
+        VerificationToken vt = verificationTokenService.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
+
+        if (vt.getExpiryDate().isBefore(LocalDateTime.now())) {
+            verificationTokenService.deleteToken(token);
+            throw new RuntimeException("Verification token expired");
+        }
+
+        User user = vt.getUser();
+        user.setVerified(true);
+        userRepository.save(user);
+
+        verificationTokenService.deleteToken(token);
+
+        // Тільки тут відправляємо Welcome event
+        UserRegisteredEvent event = UserRegisteredEvent.builder()
+                .email(user.getEmail())
+                .username(user.getUsername())
                 .build();
         userEventProducer.publishUserRegistered(event);
-        return savedUser;
+
+        return true;
     }
 
     @Override

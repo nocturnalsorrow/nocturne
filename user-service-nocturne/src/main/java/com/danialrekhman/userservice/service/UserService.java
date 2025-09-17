@@ -10,6 +10,9 @@ public interface UserService {
 
     User signUpUser(User user);
 
+    // New method
+    boolean verifyUser(String token);
+
     String verifyAndReturnToken(User user);
 
     User updateUser(String email, UserUpdateRequestDTO requestDTO, Authentication authentication);

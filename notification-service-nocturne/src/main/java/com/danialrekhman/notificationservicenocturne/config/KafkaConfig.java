@@ -74,4 +74,9 @@ public class KafkaConfig {
     public ConcurrentKafkaListenerContainerFactory<String, PaymentFailedEvent> paymentFailedKafkaListenerContainerFactory() {
         return createFactory(PaymentFailedEvent.class);
     }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, VerificationEmailEvent> verificationKafkaListenerContainerFactory() {
+        return createFactory(VerificationEmailEvent.class);
+    }
 }
