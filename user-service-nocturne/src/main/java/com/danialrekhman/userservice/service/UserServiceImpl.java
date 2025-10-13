@@ -90,7 +90,6 @@ public class UserServiceImpl implements UserService {
         User user = vt.getUser();
         user.setVerified(true);
         userRepository.save(user);
-
         verificationTokenService.deleteToken(token);
 
         // Тільки тут відправляємо Welcome event

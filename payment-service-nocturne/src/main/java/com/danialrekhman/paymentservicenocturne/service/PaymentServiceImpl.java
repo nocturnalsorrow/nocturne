@@ -106,7 +106,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-
     private PaymentStatus processPaymentMock(Payment payment) {
         if (payment.getMethod() == PaymentMethod.MOCK) {
             return PaymentStatus.SUCCESS;
