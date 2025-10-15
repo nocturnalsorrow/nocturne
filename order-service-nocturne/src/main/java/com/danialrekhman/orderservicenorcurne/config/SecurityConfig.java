@@ -40,6 +40,8 @@ public class SecurityConfig {
                         // Доступ к общим данным
                         .requestMatchers(HttpMethod.GET, "/api/orders/**", "/api/order-items/**").authenticated()
 
+                        .requestMatchers("/actuator/**").permitAll()
+
                         // Остальные запросы — только для авторизованных пользователей
                         .anyRequest().authenticated()
                 )

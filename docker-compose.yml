@@ -16,62 +16,180 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
 
-#version: '3.8'
 #services:
-#  kafka-1:
-#    image: bitnami/kafka:3.9.0
-#    container_name: kafka-1
+#  # ===================== KAFKA STACK =====================
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:7.6.0
+#    container_name: zookeeper
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#    networks:
+#      - default
+#
+#  kafka:
+#    image: confluentinc/cp-kafka:7.6.0
+#    container_name: kafka
+#    depends_on:
+#      - zookeeper
 #    ports:
 #      - "9092:9092"
-#      - "9093:9093"
 #    environment:
-#      - KAFKA_ENABLE_KRAFT=yes
-#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
-#      - KAFKA_CFG_NODE_ID=1
-#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
-#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,CONTROLLER://kafka-1:9093
-#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-#      - ALLOW_PLAINTEXT_LISTENER=yes
-#    volumes:
-#      - ./data/kafka-1:/bitnami/kafka
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      # ВАЖЛИВО: сервіси в контейнерах підключаються через 'kafka:9092'
+#      # але для локальних тестів з хост-машини залишаємо також localhost
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#    networks:
+#      - default
 #
-#  kafka-2:
-#    image: bitnami/kafka:3.9.0
-#    container_name: kafka-2
+#  kafka-ui:
+#    image: provectuslabs/kafka-ui:latest
+#    container_name: kafka-ui
 #    ports:
-#      - "9094:9094"
-#      - "9095:9095"
+#      - "8089:8080"
+#    depends_on:
+#      - kafka
 #    environment:
-#      - KAFKA_ENABLE_KRAFT=yes
-#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
-#      - KAFKA_CFG_NODE_ID=2
-#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
-#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094,CONTROLLER://:9095
-#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9094,CONTROLLER://kafka-2:9095
-#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-#      - ALLOW_PLAINTEXT_LISTENER=yes
-#    volumes:
-#      - ./data/kafka-2:/bitnami/kafka
+#      KAFKA_CLUSTERS_0_NAME: local
+#      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+#      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+#    networks:
+#      - default
 #
-#  kafka-3:
-#    image: bitnami/kafka:3.9.0
-#    container_name: kafka-3
-#    ports:
-#      - "9096:9096"
-#      - "9097:9097"
+#  # ===================== DATABASES =====================
+#  postgres-user:
+#    image: postgres:latest
+#    container_name: postgres-user
 #    environment:
-#      - KAFKA_ENABLE_KRAFT=yes
-#      - KAFKA_CFG_PROCESS_ROLES=broker,controller
-#      - KAFKA_CFG_NODE_ID=3
-#      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9093,2@kafka-2:9095,3@kafka-3:9097
-#      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9096,CONTROLLER://:9097
-#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9096,CONTROLLER://kafka-3:9097
-#      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-#      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-#      - ALLOW_PLAINTEXT_LISTENER=yes
-#    volumes:
-#      - ./data/kafka-3:/bitnami/kafka
-
+#      POSTGRES_DB: user-service-nocturne
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: root
+#    ports:
+#      - "5433:5432"
+#    networks:
+#      - default
+#
+#  postgres-product:
+#    image: postgres:latest
+#    container_name: postgres-product
+#    environment:
+#      POSTGRES_DB: product-service-nocturne
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: root
+#    ports:
+#      - "5434:5432"
+#    networks:
+#      - default
+#
+#  postgres-order:
+#    image: postgres:latest
+#    container_name: postgres-order
+#    environment:
+#      POSTGRES_DB: order-service-nocturne
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: root
+#    ports:
+#      - "5435:5432"
+#    networks:
+#      - default
+#
+#  postgres-payment:
+#    image: postgres:latest
+#    container_name: postgres-payment
+#    environment:
+#      POSTGRES_DB: payment-service-nocturne
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: root
+#    ports:
+#      - "5436:5432"
+#    networks:
+#      - default
+#
+#  # ===================== MICROSERVICES =====================
+#  user-service:
+#    build: ./user-service-nocturne
+#    container_name: user-service
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - kafka
+#      - postgres-user
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/user-service-nocturne
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: root
+#      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#    networks:
+#      - default
+#
+#  product-service:
+#    build: ./product-service-nocturne
+#    container_name: product-service
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - kafka
+#      - postgres-product
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/product-service-nocturne
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: root
+#      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#    networks:
+#      - default
+#
+#  order-service:
+#    build: ./order-service-nocturne
+#    container_name: order-service
+#    ports:
+#      - "8082:8082"
+#    depends_on:
+#      - kafka
+#      - postgres-order
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/order-service-nocturne
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: root
+#      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#    networks:
+#      - default
+#
+#  payment-service:
+#    build: ./payment-service-nocturne
+#    container_name: payment-service
+#    ports:
+#      - "8083:8083"
+#    depends_on:
+#      - kafka
+#      - postgres-payment
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment-service-nocturne
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: root
+#      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#    networks:
+#      - default
+#
+#  notification-service:
+#    build: ./notification-service-nocturne
+#    container_name: notification-service
+#    ports:
+#      - "8084:8084"
+#    depends_on:
+#      - kafka
+#    environment:
+#      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#      MAIL_HOST: smtp.gmail.com
+#      MAIL_PORT: 587
+#      MAIL_USERNAME: theviperbeast03@gmail.com
+#      MAIL_PASSWORD: hzqwnpeezmvlrxbi
+#    networks:
+#      - default
+#
+## ===================== NETWORK =====================
+#networks:
+#  default:
+#    driver: bridge

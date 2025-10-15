@@ -30,6 +30,7 @@ public class SecurityConfig {
                         // Публичный доступ к GET-запросам
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**/images").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
 
                         // Только ADMIN может делать POST, PUT, DELETE
                         .requestMatchers(HttpMethod.POST, "/api/**").authenticated()

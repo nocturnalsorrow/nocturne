@@ -35,6 +35,8 @@ public class SecurityConfig {
                         // Получение платежа по id — аутентифицированные
                         .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
 
+                        .requestMatchers("/actuator/**").permitAll()
+
                         // Остальные запросы — только для авторизованных
                         .anyRequest().authenticated()
                 )
