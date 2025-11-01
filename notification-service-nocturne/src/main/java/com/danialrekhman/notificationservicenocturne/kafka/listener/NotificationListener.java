@@ -90,12 +90,10 @@ public class NotificationListener {
         String to = event.getEmail();
         String subject = "Please verify your email";
         String body = "Hello " + event.getUsername() + ",\n\n"
-                + "We received a request to verify your email address.\n\n"
-                + "Copy and paste the following verification code into the browser:\n\n"
+                + "You need to verify your email address before we start.\n\n"
+                + "Here is verification code:\n\n"
                 + event.getToken() + "\n\n"
-                + "or click the link to verify your email:\n\n"
-                + event.getVerificationUrl()
-                + "\n\nIf you didn't register, ignore this email.";
+                + "If you didn't register, ignore this email.";
         emailService.sendEmail(to, subject, body);
     }
 }

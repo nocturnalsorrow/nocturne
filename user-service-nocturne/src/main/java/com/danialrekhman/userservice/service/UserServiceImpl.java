@@ -11,6 +11,7 @@ import com.danialrekhman.userservice.model.VerificationToken;
 import com.danialrekhman.userservice.repository.UserRepository;
 import com.danialrekhman.userservice.security.JwtService;
 import com.danialrekhman.userservice.security.MyUserDetails;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final UserEventProducer userEventProducer;
     private final VerificationTokenService verificationTokenService;
 
+    @Transactional
     @Override
     public List<User> getAllUsers(Authentication authentication) {
         if (!isAdmin(authentication))
@@ -42,15 +44,17 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll();
     }
 
+    @Transactional
     @Override
     public User getUserByEmail(String email, Authentication authentication) {
-       if (!isAdmin(authentication) && !email.equals(authentication.getName()))
+        if (!isAdmin(authentication) && !email.equals(authentication.getName()))
             throw new CustomAccessDeniedException("You can only view your own profile.");
-       if (!userRepository.existsByEmail(email))
-           throw new UserNotFoundException("User with email '" + email + "' not found.");
+        if (!userRepository.existsByEmail(email))
+            throw new UserNotFoundException("User with email '" + email + "' not found.");
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     @Override
     public User signUpUser(User user) {
         if (userRepository.existsByEmail(user.getEmail()))
@@ -69,7 +73,7 @@ public class UserServiceImpl implements UserService {
                 .email(savedUser.getEmail())
                 .username(savedUser.getUsername())
                 .token(vt.getToken())
-                .verificationUrl("http://localhost:3000/verify?token=" + vt.getToken())
+//                .verificationUrl("http://localhost:8080/api/users/verify?token=" + vt.getToken())
                 .build();
         userEventProducer.publishVerificationEmail(verificationEvent);
 
@@ -77,14 +81,15 @@ public class UserServiceImpl implements UserService {
     }
 
 
+    @Transactional
     @Override
     public boolean verifyUser(String token) {
         VerificationToken vt = verificationTokenService.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
+                .orElseThrow(() -> new InvalidTokenException("Invalid verification token"));
 
         if (vt.getExpiryDate().isBefore(LocalDateTime.now())) {
             verificationTokenService.deleteToken(token);
-            throw new RuntimeException("Verification token expired");
+            throw new TokenExpiredException("Verification token expired");
         }
 
         User user = vt.getUser();
@@ -102,6 +107,7 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
+    @Transactional
     @Override
     public String verifyAndReturnToken(User userCredentials) {
         try {
@@ -110,12 +116,15 @@ public class UserServiceImpl implements UserService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
             User authenticatedUser = myUserDetails.getUser();
+            if(authenticatedUser.isVerified())
+                throw new UserNotVerifiedException("User not verified.");
             return jwtService.generateToken(authenticatedUser.getEmail(), authenticatedUser.getRole().name());
         } catch (BadCredentialsException e) {
-            throw new AuthenticationFailedException("Wrong email or password.");
+            throw new AuthenticationFailedException("Invalid username or password.");
         }
     }
 
+    @Transactional
     @Override
     public User updateUser(String email, UserUpdateRequestDTO userUpdateRequestDTO, Authentication authentication) {
         if (!userRepository.existsByEmail(email))
@@ -130,6 +139,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(userToUpdate);
     }
 
+    @Transactional
     @Override
     public void deleteUserByEmail(String email, Authentication authentication) {
         if (!isAdmin(authentication))

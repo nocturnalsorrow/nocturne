@@ -1,5 +1,6 @@
 package com.danialrekhman.userservice.security;
 
+import com.danialrekhman.userservice.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

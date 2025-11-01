@@ -1,4 +1,4 @@
-package com.danialrekhman.userservice.security;
+package com.danialrekhman.userservice.service;
 
 import org.springframework.stereotype.Service;
 

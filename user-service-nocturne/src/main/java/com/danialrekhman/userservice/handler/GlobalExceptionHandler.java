@@ -65,4 +65,22 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR, "Image processing error", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(UserNotVerifiedException.class)
+    public ResponseEntity<ApiError> handleUserNotVerified(UserNotVerifiedException ex) {
+        ApiError error = new ApiError(HttpStatus.FORBIDDEN, "User not verified", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiError> handleInvalidToken(InvalidTokenException ex) {
+        ApiError error = new ApiError(HttpStatus.FORBIDDEN, "Invalid token", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<ApiError> handleTokenExpired(TokenExpiredException ex) {
+        ApiError error = new ApiError(HttpStatus.FORBIDDEN, "Verification token expired", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
 }
