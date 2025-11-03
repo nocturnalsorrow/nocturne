@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -22,9 +23,9 @@ import java.util.List;
 public class ProductImageServiceImpl implements ProductImageService {
 
     private final ProductImageRepository productImageRepository;
-
     private final ProductRepository productRepository;
 
+    @Transactional
     @Override
     public ProductImage addImageToProduct(Long productId, ProductImage image, Authentication authentication) {
         if(!isAdmin(authentication))
@@ -35,6 +36,7 @@ public class ProductImageServiceImpl implements ProductImageService {
         return productImageRepository.save(image);
     }
 
+    @Transactional
     @Override
     public void deleteImage(Long imageId, Authentication authentication) {
         if (!isAdmin(authentication))
@@ -44,6 +46,7 @@ public class ProductImageServiceImpl implements ProductImageService {
         productImageRepository.delete(image);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<ProductImage> getImagesByProduct(Long productId, Authentication authentication) {
         if(!isAdmin(authentication))

@@ -18,6 +18,7 @@ import com.danialrekhman.orderservicenorcurne.model.OrderStatus;
 import com.danialrekhman.orderservicenorcurne.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,7 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 @Slf4j
 public class OrderServiceImpl implements OrderService {
@@ -41,15 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductCheckProducer productCheckProducer;
     private final OrderEventProducer orderEventProducer;
 
-//    @Override
-//    public Order createOrder(OrderRequestDTO requestDTO, Authentication authentication) {
-//        if (authentication == null || authentication.getName() == null)
-//            throw new CustomAccessDeniedException("You don't have access to create an order.");
-//        Order order = orderMapper.toEntity(requestDTO);
-//        order.setUserEmail(authentication.getName());
-//        return orderRepository.save(order);
-//    }
-
+    @Transactional
     @Override
     public Order createOrder(OrderRequestDTO requestDTO, Authentication authentication) {
         if (authentication == null || authentication.getName() == null)
@@ -133,6 +125,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findAllByUserEmailOrderByOrderDateDesc(email);
     }
 
+    @Transactional
     @Override
     public Order updateOrderStatus(Long orderId, OrderUpdateStatusDTO status, Authentication authentication) {
         if (!isAdmin(authentication))
@@ -164,6 +157,7 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
     }
 
+    @Transactional
     @Override
     public Order cancelOrder(Long orderId, Authentication authentication) {
         Order order = orderRepository.findById(orderId)
@@ -182,6 +176,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    @Transactional
     @Override
     public void deleteOrder(Long orderId, Authentication authentication) {
         if (!isAdmin(authentication))
@@ -212,7 +207,9 @@ public class OrderServiceImpl implements OrderService {
     public String getUserEmailByOrderId(Long orderId, Authentication authentication) {
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can get user email by order id.");
-        return orderRepository.findUserEmailById(orderId);
+        return orderRepository.findUserEmailById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order with id " + orderId + " not found for user email check."));
     }
 
     private void releaseReservedStock(List<ProductCheckMessage> reservedProducts) {

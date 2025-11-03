@@ -34,7 +34,7 @@ public class ProductImageController {
     }
 
     @DeleteMapping("/images/{imageId}")
-    public ResponseEntity<Void> deleteImage(@PathVariable Long imageId, Authentication authentication) {
+    public ResponseEntity<String> deleteImage(@PathVariable Long imageId, Authentication authentication) {
         productImageService.deleteImage(imageId, authentication);
         return ResponseEntity.noContent().build();
     }

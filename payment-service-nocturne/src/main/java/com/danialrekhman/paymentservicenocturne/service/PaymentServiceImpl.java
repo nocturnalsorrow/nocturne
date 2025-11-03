@@ -4,6 +4,7 @@ import com.danialrekhman.commonevents.OrderCreatedEvent;
 import com.danialrekhman.commonevents.PaymentFailedEvent;
 import com.danialrekhman.commonevents.PaymentProcessedEvent;
 import com.danialrekhman.paymentservicenocturne.dto.PaymentResponseDTO;
+import com.danialrekhman.paymentservicenocturne.dto.PaymentStatusRequestDTO;
 import com.danialrekhman.paymentservicenocturne.exception.CustomAccessDeniedException;
 import com.danialrekhman.paymentservicenocturne.exception.InvalidPaymentDataException;
 import com.danialrekhman.paymentservicenocturne.exception.PaymentNotFoundException;
@@ -161,17 +162,17 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public void updatePaymentStatus(Long paymentId, PaymentStatus newStatus, Authentication authentication) {
+    public void updatePaymentStatus(Long paymentId, PaymentStatusRequestDTO status, Authentication authentication) {
         if (!isAdmin(authentication)) {
             throw new CustomAccessDeniedException("Only admin can update payment status.");
         }
 
         Payment p = getPaymentEntityById(paymentId, authentication);
-        if (newStatus == null) {
+        if (status == null) {
             throw new InvalidPaymentDataException("Payment status cannot be null");
         }
 
-        p.setStatus(newStatus);
+        p.setStatus(PaymentStatus.valueOf(status.getStatus()));
         p.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(p);
     }

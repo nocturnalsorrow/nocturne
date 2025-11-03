@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,25 +21,21 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-
     private final CategoryRepository categoryRepository;
 
+    @Transactional
     @Override
     public Product createProduct(Product product, Authentication authentication) {
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can create product.");
-        if (product.getName() == null || product.getName().isBlank()) {
+        if (product.getName() == null || product.getName().isBlank())
             throw new IllegalArgumentException("Product name cannot be null or blank.");
-        }
-        if (productRepository.existsByName(product.getName())) {
+        if (productRepository.existsByName(product.getName()))
             throw new DuplicateResourceException("Product with name '" + product.getName() + "' already exists.");
-        }
-        if (product.getDescription() == null || product.getDescription().isBlank()) {
+        if (product.getDescription() == null || product.getDescription().isBlank())
             throw new IllegalArgumentException("Description cannot be null or blank.");
-        }
-        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0)
             throw new IllegalArgumentException("Price must be non-null and greater than or equal to zero.");
-        }
         if (product.getCategory() != null && product.getCategory().getId() != null) {
             Category category = categoryRepository.findById(product.getCategory().getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -48,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public Product updateProduct(Long id, Product updatedProduct, Authentication authentication) {
         if (!isAdmin(authentication))
@@ -85,6 +83,7 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(existingProduct);
     }
 
+    @Transactional
     @Override
     public void deleteProduct(Long id, Authentication authentication) {
         if (!isAdmin(authentication))
@@ -100,6 +99,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product with id " + id + " not found for retrieval."));
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Product> getAllProducts() {
         return productRepository.findAll();
@@ -107,11 +107,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Product> getProductsByCategory(Long categoryId) {
-        if (!categoryRepository.existsById(categoryId))
-            throw new ResourceNotFoundException("Category with id " + categoryId + " not found for product retrieval by category ID.");
+        categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Category with id " + categoryId + " not found."));
         return productRepository.findByCategoryId(categoryId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Product> searchProducts(String keyword) {
         return productRepository.findByNameContainingIgnoreCase(keyword);
@@ -122,11 +124,13 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.existsByIdAndAvailableTrue(id);
     }
 
+    @Transactional
     @Override
     public boolean reserveStock(Long productId, int amount) {
         return productRepository.decreaseStock(productId, amount) > 0;
     }
 
+    @Transactional
     @Override
     public void releaseStock(Long productId, int amount) {
         productRepository.increaseStock(productId, amount);

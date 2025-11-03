@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class OrderItemServiceImpl implements OrderItemService {
@@ -26,6 +25,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     OrderItemRepository orderItemRepository;
     OrderRepository orderRepository;
 
+    @Transactional
     @Override
     public OrderItem createOrderItem(OrderItem item, Authentication authentication) {
         Long orderId = Optional.ofNullable(item.getOrder())
@@ -68,6 +68,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         return items;
     }
 
+    @Transactional
     @Override
     public OrderItem updateOrderItemQuantity(Long orderItemId, int newQuantity, Authentication authentication) {
         if(!isAdmin(authentication))
@@ -85,6 +86,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         return orderItemRepository.save(orderItem);
     }
 
+    @Transactional
     @Override
     public void deleteOrderItem(Long orderItemId, Authentication authentication) {
         if(!isAdmin(authentication))

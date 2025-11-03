@@ -3,6 +3,7 @@ package com.danialrekhman.paymentservicenocturne.service;
 import com.danialrekhman.commonevents.OrderCreatedEvent;
 import com.danialrekhman.paymentservicenocturne.dto.PaymentRequestDTO;
 import com.danialrekhman.paymentservicenocturne.dto.PaymentResponseDTO;
+import com.danialrekhman.paymentservicenocturne.dto.PaymentStatusRequestDTO;
 import com.danialrekhman.paymentservicenocturne.model.Payment;
 import com.danialrekhman.paymentservicenocturne.model.PaymentStatus;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,6 @@ public interface PaymentService {
 
     List<Payment> getAllPayments(Authentication authentication);
 
-    void updatePaymentStatus(Long paymentId, PaymentStatus newStatus, Authentication authentication);
+    void updatePaymentStatus(Long paymentId, PaymentStatusRequestDTO statusRequestDTO, Authentication authentication);
 }
 

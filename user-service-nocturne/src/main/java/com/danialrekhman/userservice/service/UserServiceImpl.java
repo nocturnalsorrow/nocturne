@@ -11,7 +11,6 @@ import com.danialrekhman.userservice.model.VerificationToken;
 import com.danialrekhman.userservice.repository.UserRepository;
 import com.danialrekhman.userservice.security.JwtService;
 import com.danialrekhman.userservice.security.MyUserDetails;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,6 +20,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
     private final UserEventProducer userEventProducer;
     private final VerificationTokenService verificationTokenService;
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public List<User> getAllUsers(Authentication authentication) {
         if (!isAdmin(authentication))
@@ -44,14 +44,13 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll();
     }
 
-    @Transactional
     @Override
     public User getUserByEmail(String email, Authentication authentication) {
         if (!isAdmin(authentication) && !email.equals(authentication.getName()))
             throw new CustomAccessDeniedException("You can only view your own profile.");
-        if (!userRepository.existsByEmail(email))
-            throw new UserNotFoundException("User with email '" + email + "' not found.");
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "User with email '" + email + "' not found."));
     }
 
     @Transactional
@@ -83,7 +82,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public boolean verifyUser(String token) {
+    public void verifyUser(String token) {
         VerificationToken vt = verificationTokenService.findByToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid verification token"));
 
@@ -103,11 +102,8 @@ public class UserServiceImpl implements UserService {
                 .username(user.getUsername())
                 .build();
         userEventProducer.publishUserRegistered(event);
-
-        return true;
     }
 
-    @Transactional
     @Override
     public String verifyAndReturnToken(User userCredentials) {
         try {
@@ -116,7 +112,7 @@ public class UserServiceImpl implements UserService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             MyUserDetails myUserDetails = (MyUserDetails) authentication.getPrincipal();
             User authenticatedUser = myUserDetails.getUser();
-            if(authenticatedUser.isVerified())
+            if(!authenticatedUser.isVerified())
                 throw new UserNotVerifiedException("User not verified.");
             return jwtService.generateToken(authenticatedUser.getEmail(), authenticatedUser.getRole().name());
         } catch (BadCredentialsException e) {
@@ -127,9 +123,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public User updateUser(String email, UserUpdateRequestDTO userUpdateRequestDTO, Authentication authentication) {
-        if (!userRepository.existsByEmail(email))
-            throw new UserNotFoundException("User with email '" + email + "' not found.");
-        User userToUpdate = userRepository.findByEmail(email);
+        User userToUpdate = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "User with email '" + email + "' not found."));
         if (!isAdmin(authentication) && !userToUpdate.getEmail().equals(authentication.getName()))
             throw new CustomAccessDeniedException("You can only update your own profile.");
         if (userUpdateRequestDTO.getUsername() != null && !userUpdateRequestDTO.getUsername().isBlank())
@@ -144,9 +140,10 @@ public class UserServiceImpl implements UserService {
     public void deleteUserByEmail(String email, Authentication authentication) {
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can delete users.");
-        if (!userRepository.existsByEmail(email))
-            throw new UserNotFoundException("User with email '" + email + "' not found.");
-        userRepository.delete(userRepository.findByEmail(email));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "User with email '" + email + "' not found."));
+        userRepository.delete(user);
     }
 
     private boolean isAdmin(Authentication authentication) {

@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@Transactional
 public interface ProductRepository  extends JpaRepository<Product, Long> {
 
     boolean existsByName(String name);

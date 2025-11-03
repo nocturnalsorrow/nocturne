@@ -53,7 +53,7 @@ public class UserController {
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestParam("token") String token) {
         userService.verifyUser(token);
-        return ResponseEntity.ok("Email successfully verified");
+        return ResponseEntity.ok("Email successfully verified!");
     }
 
     @GetMapping
@@ -84,7 +84,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{email}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String email, Authentication authentication) {
+    public ResponseEntity<String> deleteUser(@PathVariable String email, Authentication authentication) {
         userService.deleteUserByEmail(email, authentication);
         return ResponseEntity.noContent().build();
     }

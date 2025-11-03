@@ -10,14 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@Transactional
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     // Найти все товары в конкретном заказе
     List<OrderItem> findAllByOrderId(Long orderId);
 
     @Query("select o.userEmail from OrderItem oi join oi.order o where oi.id = :orderItemId")
-    String findUserEmailByOrderItemId(Long orderItemId);
+    Optional<String> findUserEmailByOrderItemId(Long orderItemId);
 
     // Найти товар в заказе по ID продукта
     Optional<OrderItem> findByOrderIdAndProductId(Long orderId, Long productId);

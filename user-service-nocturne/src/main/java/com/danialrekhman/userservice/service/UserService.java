@@ -10,8 +10,7 @@ public interface UserService {
 
     User signUpUser(User user);
 
-    // New method
-    boolean verifyUser(String token);
+    void verifyUser(String token);
 
     String verifyAndReturnToken(User user);
 

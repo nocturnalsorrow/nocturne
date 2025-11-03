@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+    @Transactional
     @Override
     public Category createCategory(Category category, Authentication authentication) {
         if(!isAdmin(authentication))
@@ -29,6 +31,7 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.save(category);
     }
 
+    @Transactional
     @Override
     public Category updateCategory(Long id, Category updatedCategory, Authentication authentication) {
         if(!isAdmin(authentication))
@@ -49,13 +52,14 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.save(existingCategory);
     }
 
+    @Transactional
     @Override
     public void deleteCategory(Long id, Authentication authentication) {
         if(!isAdmin(authentication))
             throw new CustomAccessDeniedException("Only admin can delete category.");
-        if (!categoryRepository.existsById(id))
-            throw new ResourceNotFoundException("Category with id " + id + " not found for deletion.");
-        categoryRepository.deleteById(id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category with id " + id + " not found."));
+        categoryRepository.delete(category);
     }
 
     @Override
@@ -66,6 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category with id " + id + " not found."));
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
@@ -73,11 +78,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<Category> getSubcategories(Long parentId) {
-        if (!categoryRepository.existsById(parentId))
-            throw new ResourceNotFoundException("Parent category with id " + parentId + " not found for subcategories retrieval.");
+        categoryRepository.findById(parentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Parent category not found."));
         return categoryRepository.findAllByParentId(parentId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<Category> getAllParentCategories() {
         return categoryRepository.findAllByParentIsNull();

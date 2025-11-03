@@ -1,6 +1,7 @@
 package com.danialrekhman.paymentservicenocturne.controller;
 
 import com.danialrekhman.paymentservicenocturne.dto.PaymentResponseDTO;
+import com.danialrekhman.paymentservicenocturne.dto.PaymentStatusRequestDTO;
 import com.danialrekhman.paymentservicenocturne.mapper.PaymentMapper;
 import com.danialrekhman.paymentservicenocturne.model.PaymentStatus;
 import com.danialrekhman.paymentservicenocturne.service.PaymentService;
@@ -43,12 +44,13 @@ public class PaymentController {
     }
 
     @PutMapping("/{paymentId}/status")
-    public ResponseEntity<Void> updatePaymentStatus(
+    public ResponseEntity<String> updatePaymentStatus(
             @PathVariable Long paymentId,
-            @RequestBody PaymentStatus newStatus,
+            @RequestBody PaymentStatusRequestDTO status,
             Authentication authentication) {
-        paymentService.updatePaymentStatus(paymentId, newStatus, authentication);
-        return ResponseEntity.noContent().build();
+        paymentService.updatePaymentStatus(paymentId, status, authentication);
+        return ResponseEntity.ok("Payment status changed to "
+                + status.getStatus() + " successfully!");
     }
 }
 

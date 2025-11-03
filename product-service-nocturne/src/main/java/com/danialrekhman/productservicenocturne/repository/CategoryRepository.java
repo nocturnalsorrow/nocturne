@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@Transactional
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     boolean existsByName(String name);

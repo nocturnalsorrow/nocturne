@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-@Transactional
 public interface ProductImageRepository extends JpaRepository <ProductImage, Long> {
 
     List<ProductImage> findProductImagesByProductId(Long productId);
