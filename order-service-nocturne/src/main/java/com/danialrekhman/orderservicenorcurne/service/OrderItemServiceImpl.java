@@ -31,7 +31,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         Long orderId = Optional.ofNullable(item.getOrder())
                 .map(Order::getId)
                 .orElseThrow(() -> new InvalidOrderItemDataException("Order must be provided for order item."));
-        Order order = orderRepository.findById(orderId)
+        orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found."));
         if (!isAdmin(authentication))
             throw new CustomAccessDeniedException("You don't have access to create an item for this order.");
