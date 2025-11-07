@@ -21,7 +21,6 @@ public class UserEventProducer {
 
     public void publishVerificationEmail(VerificationEmailEvent event) {
         log.info("Publishing VerificationEmailEvent for email={}", event.getEmail());
-        // топік "email-verification" — можеш змінити на свій
         kafkaTemplate.send("email-verification", event.getEmail(), event);
     }
 }

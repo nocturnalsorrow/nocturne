@@ -66,18 +66,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    // 403 Forbidden
     @ExceptionHandler(UserNotVerifiedException.class)
     public ResponseEntity<ApiError> handleUserNotVerified(UserNotVerifiedException ex) {
         ApiError error = new ApiError(HttpStatus.FORBIDDEN, "User not verified", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
+    // 403 Forbidden
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiError> handleInvalidToken(InvalidTokenException ex) {
         ApiError error = new ApiError(HttpStatus.FORBIDDEN, "Invalid token", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
+    // 403 Forbidden
     @ExceptionHandler(TokenExpiredException.class)
     public ResponseEntity<ApiError> handleTokenExpired(TokenExpiredException ex) {
         ApiError error = new ApiError(HttpStatus.FORBIDDEN, "Verification token expired", ex.getMessage());
