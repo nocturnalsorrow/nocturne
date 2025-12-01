@@ -3,74 +3,79 @@ package com.danialrekhman.userservice.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 class TokenBlacklistServiceTest {
+
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
     private TokenBlacklistService tokenBlacklistService;
 
     @BeforeEach
     void setUp() {
-        // Создаем новый, чистый экземпляр перед каждым тестом
-        // Это гарантирует изоляцию тестов друг от друга
-        tokenBlacklistService = new TokenBlacklistService();
+        tokenBlacklistService = new TokenBlacklistService(redisTemplate);
     }
 
     @Test
-    @DisplayName("isTokenBlacklisted должен возвращать true для добавленного токена")
-    void isTokenBlacklisted_ShouldReturnTrue_ForBlacklistedToken() {
-        // Arrange
+    @DisplayName("blacklistToken should call Redis set with correct parameters")
+    void blacklistToken_ShouldCallRedisSet() {
         String token = "my-secret-jwt-token";
+        long ttl = 3600000L;
 
-        // Act
-        tokenBlacklistService.blacklistToken(token);
-        boolean isBlacklisted = tokenBlacklistService.isTokenBlacklisted(token);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-        // Assert
-        assertTrue(isBlacklisted, "Токен, добавленный в черный список, должен быть помечен как невалидный");
+        tokenBlacklistService.blacklistToken(token, ttl);
+
+        verify(valueOperations).set(token, "BLACKLISTED", ttl, TimeUnit.MILLISECONDS);
     }
 
     @Test
-    @DisplayName("isTokenBlacklisted должен возвращать false для токена, которого нет в списке")
-    void isTokenBlacklisted_ShouldReturnFalse_ForNonBlacklistedToken() {
-        // Arrange
-        String token = "a-valid-jwt-token";
+    @DisplayName("isTokenBlacklisted should return true if Redis contains the key")
+    void isTokenBlacklisted_ShouldReturnTrue_WhenRedisHasKey() {
+        String token = "blacklisted-token";
+        when(redisTemplate.hasKey(token)).thenReturn(true);
 
-        // Act
-        boolean isBlacklisted = tokenBlacklistService.isTokenBlacklisted(token);
+        boolean result = tokenBlacklistService.isTokenBlacklisted(token);
 
-        // Assert
-        assertFalse(isBlacklisted, "Токен, который не был добавлен, не должен быть в черном списке");
+        assertTrue(result, "Should return true when key exists in Redis");
+        verify(redisTemplate).hasKey(token);
     }
 
     @Test
-    @DisplayName("isTokenBlacklisted должен возвращать false для другого токена, если в списке есть один")
-    void isTokenBlacklisted_ShouldReturnFalse_WhenCheckingDifferentToken() {
-        // Arrange
-        String tokenToAdd = "blacklisted-token";
-        String tokenToCheck = "another-token";
+    @DisplayName("isTokenBlacklisted should return false if key is missing in Redis")
+    void isTokenBlacklisted_ShouldReturnFalse_WhenRedisMissesKey() {
+        String token = "clean-token";
+        when(redisTemplate.hasKey(token)).thenReturn(false);
 
-        // Act
-        tokenBlacklistService.blacklistToken(tokenToAdd);
-        boolean isBlacklisted = tokenBlacklistService.isTokenBlacklisted(tokenToCheck);
+        boolean result = tokenBlacklistService.isTokenBlacklisted(token);
 
-        // Assert
-        assertFalse(isBlacklisted, "Наличие одного токена в списке не должно влиять на проверку другого");
+        assertFalse(result, "Should return false when key is missing in Redis");
     }
 
     @Test
-    @DisplayName("Сервис должен корректно игнорировать null в качестве токена")
+    @DisplayName("Methods should ignore null tokens and not interact with Redis")
     void service_ShouldIgnoreNullToken() {
-        // Arrange & Act
-        // Пробуем добавить null в черный список
-        tokenBlacklistService.blacklistToken(null);
+        tokenBlacklistService.blacklistToken(null, 1000L);
+        boolean checkResult = tokenBlacklistService.isTokenBlacklisted(null);
 
-        // Assert
-        // Убеждаемся, что проверка на null возвращает false
-        assertFalse(tokenBlacklistService.isTokenBlacklisted(null), "Проверка на null должна всегда возвращать false");
+        assertFalse(checkResult);
 
-        // Убеждаемся, что добавление null не повлияло на другие токены
-        assertFalse(tokenBlacklistService.isTokenBlacklisted("some-token"), "Добавление null не должно влиять на другие токены");
+        verifyNoInteractions(redisTemplate);
+        verifyNoInteractions(valueOperations);
     }
 }

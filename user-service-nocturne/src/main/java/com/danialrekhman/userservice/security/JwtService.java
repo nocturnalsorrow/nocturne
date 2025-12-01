@@ -46,6 +46,12 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
+    public long getRemainingValidity(String token) {
+        long exp = extractExpiration(token).getTime();
+        long now = System.currentTimeMillis();
+        return Math.max(exp - now, 0);
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

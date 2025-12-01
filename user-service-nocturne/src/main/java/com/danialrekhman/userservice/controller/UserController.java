@@ -3,8 +3,10 @@ package com.danialrekhman.userservice.controller;
 import com.danialrekhman.userservice.dto.*;
 import com.danialrekhman.userservice.mapper.UserMapper;
 import com.danialrekhman.userservice.model.User;
+import com.danialrekhman.userservice.security.JwtService;
 import com.danialrekhman.userservice.service.TokenBlacklistService;
 import com.danialrekhman.userservice.service.UserService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/signup")
@@ -40,15 +43,28 @@ public class UserController {
         return ResponseEntity.ok(new AuthResponseDTO(token));
     }
 
+//    @PostMapping("/logout")
+//    public ResponseEntity<Void> logout(HttpServletRequest request) {
+//        String authHeader = request.getHeader("Authorization");
+//        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+//            String token = authHeader.substring(7);
+//            tokenBlacklistService.blacklistToken(token);
+//        }
+//        return ResponseEntity.ok().build();
+//    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            tokenBlacklistService.blacklistToken(token);
+            long ttl = jwtService.getRemainingValidity(token);
+            if (ttl < 0) ttl = 0;
+            tokenBlacklistService.blacklistToken(token, ttl);
         }
         return ResponseEntity.ok().build();
     }
+
 
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestParam("token") String token) {
